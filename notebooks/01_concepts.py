@@ -1,6 +1,6 @@
 import marimo
 
-__generated_with = "0.15.2"
+__generated_with = "0.17.0"
 app = marimo.App()
 
 
@@ -36,10 +36,10 @@ def _():
 
 @app.cell
 def _(ox):
-    city = ox.geocoder.geocode_to_gdf('Piedmont, California, USA')
+    city = ox.geocoder.geocode_to_gdf("Piedmont, California, USA")
     city_proj = ox.projection.project_gdf(city)
-    _ax = city_proj.plot(fc='gray', ec='none')
-    _ = _ax.axis('off')
+    _ax = city_proj.plot(fc="gray", ec="none")
+    _ = _ax.axis("off")
     return
 
 
@@ -51,7 +51,9 @@ def _(mo):
 
 @app.cell
 def _(ox):
-    piedmont_graph = ox.graph.graph_from_place('Piedmont, California, USA', network_type='drive')
+    piedmont_graph = ox.graph.graph_from_place(
+        "Piedmont, California, USA", network_type="drive"
+    )
     _fig, _ax = ox.plot.plot_graph(piedmont_graph)
     return (piedmont_graph,)
 
@@ -99,7 +101,9 @@ def _(mo):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""(Add note about file formats, motivations, issues. GraphML, Geopackage, Geodatabase?)""")
+    mo.md(
+        r"""(Add note about file formats, motivations, issues. GraphML, Geopackage, Geodatabase?)"""
+    )
     return
 
 
@@ -113,7 +117,9 @@ def _():
 @app.cell
 def _(geopackage_path, graphml_path, ox, piedmont_graph):
     # save network as geopackage file (for GIS)
-    ox.io.save_graph_geopackage(piedmont_graph, filepath=geopackage_path, directed=True)
+    ox.io.save_graph_geopackage(
+        piedmont_graph, filepath=geopackage_path, directed=True
+    )
     # save network as GraphML file to work with later in OSMnx or networkx or gephi
     ox.io.save_graphml(piedmont_graph, filepath=graphml_path)
     return
@@ -123,9 +129,17 @@ def _(geopackage_path, graphml_path, ox, piedmont_graph):
 def _(geopackage_path, gpd, np, ox, piedmont_graph):
     # load GeoPackage file
     # must ensure node/edge layers are indexed as described in OSMnx docs
-    geopackage_nodes = gpd.read_file(geopackage_path, layer='nodes').replace('', np.nan).set_index('osmid')
+    geopackage_nodes = (
+        gpd.read_file(geopackage_path, layer="nodes")
+        .replace("", np.nan)
+        .set_index("osmid")
+    )
     geopackage_nodes.index = geopackage_nodes.index.astype(int)
-    geopackage_edges = gpd.read_file(geopackage_path, layer='edges').replace('', np.nan).set_index(['u', 'v', 'key'])
+    geopackage_edges = (
+        gpd.read_file(geopackage_path, layer="edges")
+        .replace("", np.nan)
+        .set_index(["u", "v", "key"])
+    )
     # geopackage_edges["osmid"] = geopackage_edges["osmid"].astype(int)
     geopackage_edges["reversed"] = geopackage_edges["reversed"].astype(bool)
     geopackage_edges.index = geopackage_edges.index.set_levels(
@@ -137,8 +151,16 @@ def _(geopackage_path, gpd, np, ox, piedmont_graph):
     # convert the node/edge GeoDataFrames to a MultiDiGraph
     # graph_attributes = {'crs': 'epsg:4326', 'simplified': True}
     graph_attributes = piedmont_graph.graph
-    geopackage_piedmont_graph = ox.graph_from_gdfs(geopackage_nodes.sort_values(by="osmid"), geopackage_edges, graph_attrs=graph_attributes)
-    geopackage_piedmont_graph = ox.graph_from_gdfs(geopackage_nodes.sort_values(by="osmid"), geopackage_edges, graph_attrs=graph_attributes, )
+    geopackage_piedmont_graph = ox.graph_from_gdfs(
+        geopackage_nodes.sort_values(by="osmid"),
+        geopackage_edges,
+        graph_attrs=graph_attributes,
+    )
+    geopackage_piedmont_graph = ox.graph_from_gdfs(
+        geopackage_nodes.sort_values(by="osmid"),
+        geopackage_edges,
+        graph_attrs=graph_attributes,
+    )
     return geopackage_edges, geopackage_piedmont_graph, graph_attributes
 
 
@@ -175,7 +197,9 @@ def _(geopackage_piedmont_graph, nx, piedmont_graph):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""### Investigate lack of equality after exporting/importing GeoPackage""")
+    mo.md(
+        r"""### Investigate lack of equality after exporting/importing GeoPackage"""
+    )
     return
 
 
@@ -188,7 +212,11 @@ def dict_compare(dict1, dict2):
     only_in_dict2 = dict2.keys() - dict1.keys()
 
     # Keys in both but with different values
-    diff_values = {k: (dict1[k], dict2[k]) for k in dict1.keys() & dict2.keys() if dict1[k] != dict2[k]}
+    diff_values = {
+        k: (dict1[k], dict2[k])
+        for k in dict1.keys() & dict2.keys()
+        if dict1[k] != dict2[k]
+    }
 
     print("Only in dict1:", only_in_dict1)
     print("Only in dict2:", only_in_dict2)
@@ -197,13 +225,17 @@ def dict_compare(dict1, dict2):
 
 
 @app.function
-def compare_graph_adjacency_objects(grapg_adj_1, grapg_adj_2, key_a: int, key_b: int):
+def compare_graph_adjacency_objects(
+    grapg_adj_1, grapg_adj_2, key_a: int, key_b: int
+):
     print("## Top-level diff")
     diff_values = dict_compare(grapg_adj_1, grapg_adj_2)
     print("## Level 1 diff")
     diff_values_1 = dict_compare(diff_values[key_a][0], diff_values[key_a][1])
     print("## Level 2 diff")
-    diff_values_2 = dict_compare(diff_values_1[key_b][0], diff_values_1[key_b][1])
+    diff_values_2 = dict_compare(
+        diff_values_1[key_b][0], diff_values_1[key_b][1]
+    )
     print("### Level 2 diff details")
     print(diff_values_2)
     print("### Level 3 diff")
@@ -214,26 +246,36 @@ def compare_graph_adjacency_objects(grapg_adj_1, grapg_adj_2, key_a: int, key_b:
 
 @app.cell
 def _(geopackage_piedmont_graph, nx, piedmont_graph):
-    nx.utils.misc.nodes_equal(piedmont_graph.nodes, geopackage_piedmont_graph.nodes)
+    nx.utils.misc.nodes_equal(
+        piedmont_graph.nodes, geopackage_piedmont_graph.nodes
+    )
     return
 
 
 @app.cell
 def _(geopackage_piedmont_graph, nx, piedmont_graph):
-    nx.utils.misc.nodes_equal(piedmont_graph.edges, geopackage_piedmont_graph.edges)
+    nx.utils.misc.nodes_equal(
+        piedmont_graph.edges, geopackage_piedmont_graph.edges
+    )
     return
 
 
 @app.cell
 def _(geopackage_piedmont_graph, piedmont_graph):
-    compare_graph_adjacency_objects(piedmont_graph.adj, geopackage_piedmont_graph.adj, 53090322, 53082634)
+    compare_graph_adjacency_objects(
+        piedmont_graph.adj, geopackage_piedmont_graph.adj, 53090322, 53082634
+    )
     return
 
 
 @app.cell
 def _(graph_attributes, ox, piedmont_graph):
-    gdf_nodes_temp, gdf_edges_temp = ox.convert.graph_to_gdfs(piedmont_graph, fill_edge_geometry=False)
-    piedmont_graph_temp = ox.graph_from_gdfs(gdf_nodes_temp, gdf_edges_temp, graph_attrs=graph_attributes)
+    gdf_nodes_temp, gdf_edges_temp = ox.convert.graph_to_gdfs(
+        piedmont_graph, fill_edge_geometry=False
+    )
+    piedmont_graph_temp = ox.graph_from_gdfs(
+        gdf_nodes_temp, gdf_edges_temp, graph_attrs=graph_attributes
+    )
     return gdf_edges_temp, gdf_nodes_temp, piedmont_graph_temp
 
 
@@ -257,7 +299,9 @@ def _(nx, piedmont_graph, piedmont_graph_temp):
 
 @app.cell(hide_code=True)
 def _(mo):
-    mo.md(r"""In order to reconstruct a graph from GeoDataFrames, we must set `fill_edge_geometry=False` when using `graph_to_gdfs`""")
+    mo.md(
+        r"""In order to reconstruct a graph from GeoDataFrames, we must set `fill_edge_geometry=False` when using `graph_to_gdfs`"""
+    )
     return
 
 
@@ -269,11 +313,13 @@ def _(gdf_edges_temp, gdf_nodes_temp, graph_attributes, np, ox):
 
     # Drop geometry column from edges
     if "geometry" in gdf_edges_temp_clean.columns:
-        gdf_edges_temp_clean = gdf_edges_temp_clean.drop("geometry", axis="columns")
+        gdf_edges_temp_clean = gdf_edges_temp_clean.drop(
+            "geometry", axis="columns"
+        )
 
     # Replace empty strings with np.nan for consistency
-    gdf_nodes_temp_clean = gdf_nodes_temp_clean.replace('', np.nan)
-    gdf_edges_temp_clean = gdf_edges_temp_clean.replace('', np.nan)
+    gdf_nodes_temp_clean = gdf_nodes_temp_clean.replace("", np.nan)
+    gdf_edges_temp_clean = gdf_edges_temp_clean.replace("", np.nan)
 
     # Ensure indices are int type
     gdf_nodes_temp_clean.index = gdf_nodes_temp_clean.index.astype(int)
@@ -286,7 +332,9 @@ def _(gdf_edges_temp, gdf_nodes_temp, graph_attributes, np, ox):
     gdf_edges_temp_clean = gdf_edges_temp_clean.sort_index()
 
     # Reconstruct the graph
-    piedmont_graph_temp_clean = ox.graph_from_gdfs(gdf_nodes_temp_clean, gdf_edges_temp_clean, graph_attrs=graph_attributes)
+    piedmont_graph_temp_clean = ox.graph_from_gdfs(
+        gdf_nodes_temp_clean, gdf_edges_temp_clean, graph_attrs=graph_attributes
+    )
     return (
         gdf_edges_temp_clean,
         gdf_nodes_temp_clean,
@@ -307,12 +355,24 @@ def _(
     piedmont_graph,
 ):
     def nan_to_none(df):
-        return df.applymap(lambda x: None if isinstance(x, float) and np.isnan(x) else x)
-    gdf_nodes_temp_clean_1 = gdf_nodes_temp_clean.reindex(columns=gdf_nodes.columns)
-    gdf_edges_temp_clean_1 = gdf_edges_temp_clean.reindex(columns=gdf_edges.columns)
+        return df.applymap(
+            lambda x: None if isinstance(x, float) and np.isnan(x) else x
+        )
+
+
+    gdf_nodes_temp_clean_1 = gdf_nodes_temp_clean.reindex(
+        columns=gdf_nodes.columns
+    )
+    gdf_edges_temp_clean_1 = gdf_edges_temp_clean.reindex(
+        columns=gdf_edges.columns
+    )
     gdf_nodes_temp_clean_1 = nan_to_none(gdf_nodes_temp_clean_1)
     gdf_edges_temp_clean_1 = nan_to_none(gdf_edges_temp_clean_1)
-    piedmont_graph_temp_cleaner = ox.graph_from_gdfs(gdf_nodes_temp_clean_1, gdf_edges_temp_clean_1, graph_attrs=graph_attributes)
+    piedmont_graph_temp_cleaner = ox.graph_from_gdfs(
+        gdf_nodes_temp_clean_1,
+        gdf_edges_temp_clean_1,
+        graph_attrs=graph_attributes,
+    )
     nx.utils.misc.graphs_equal(piedmont_graph, piedmont_graph_temp_cleaner)
     return
 
@@ -339,7 +399,9 @@ def _(
     ox,
     piedmont_graph,
 ):
-    piedmont_graph_temp_fixed = ox.graph_from_gdfs(gdf_nodes_temp, gdf_edges_temp_fixed, graph_attrs=graph_attributes)
+    piedmont_graph_temp_fixed = ox.graph_from_gdfs(
+        gdf_nodes_temp, gdf_edges_temp_fixed, graph_attrs=graph_attributes
+    )
     nx.utils.misc.graphs_equal(piedmont_graph, piedmont_graph_temp_fixed)
     return (piedmont_graph_temp_fixed,)
 
@@ -382,7 +444,9 @@ def _(mo):
 
 @app.cell
 def _(piedmont_graph, piedmont_graph_temp_fixed):
-    compare_graph_adjacency_objects(piedmont_graph.adj, piedmont_graph_temp_fixed.adj, 53127240, 53046249)
+    compare_graph_adjacency_objects(
+        piedmont_graph.adj, piedmont_graph_temp_fixed.adj, 53127240, 53046249
+    )
     return
 
 
@@ -395,7 +459,9 @@ def _(graphml_piedmont_graph, nx, piedmont_graph):
 
 @app.cell
 def _(geopackage_piedmont_graph, nx, piedmont_graph):
-    piedmont_graph_diff_1 = nx.difference(piedmont_graph, geopackage_piedmont_graph)
+    piedmont_graph_diff_1 = nx.difference(
+        piedmont_graph, geopackage_piedmont_graph
+    )
     piedmont_graph_diff_1
     return (piedmont_graph_diff_1,)
 
@@ -419,20 +485,30 @@ def _(ox, piedmont_graph):
 @app.cell
 def _(graph_area_m, ox, piedmont_graph):
     # show some basic stats about the network
-    piedmont_graph_stats = ox.stats.basic_stats(piedmont_graph, area=graph_area_m, clean_int_tol=15)
+    piedmont_graph_stats = ox.stats.basic_stats(
+        piedmont_graph, area=graph_area_m, clean_int_tol=15
+    )
     return
 
 
 @app.cell
 def _(geopackage_piedmont_graph, ox):
-    geopackage_graph_area_m = ox.convert.graph_to_gdfs(ox.projection.project_graph(geopackage_piedmont_graph), edges=False).union_all().convex_hull.area
+    geopackage_graph_area_m = (
+        ox.convert.graph_to_gdfs(
+            ox.projection.project_graph(geopackage_piedmont_graph), edges=False
+        )
+        .union_all()
+        .convex_hull.area
+    )
     geopackage_graph_area_m
     return (geopackage_graph_area_m,)
 
 
 @app.cell
 def _(geopackage_graph_area_m, geopackage_piedmont_graph, ox):
-    geopackage_piedmont_graph_stats = ox.stats.basic_stats(geopackage_piedmont_graph, area=geopackage_graph_area_m, clean_int_tol=15)
+    geopackage_piedmont_graph_stats = ox.stats.basic_stats(
+        geopackage_piedmont_graph, area=geopackage_graph_area_m, clean_int_tol=15
+    )
     return
 
 
