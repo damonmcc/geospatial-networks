@@ -3,15 +3,18 @@ import marimo
 __generated_with = "0.17.0"
 app = marimo.App()
 
+with app.setup:
+    import marimo as mo
+
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""# Geospatial Network Concepts""")
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(
         r"""
     Geospatial network data (such as streets, paths, rail, canals, etc) are useful for modeling mobility and access to resources.
@@ -22,40 +25,75 @@ def _(mo):
     return
 
 
+@app.cell(hide_code=True)
+def _():
+    mo.md(
+        r"""
+    OpenStreetMap's data model comprises three element types: Nodes (points), ways (i.e., sequences of nodes, which can be either open ways representing lines or closed ways representing polygons), and relations (i.e., between nodes and/or ways).
+
+    These elements can possess one or more tags: Key-value pairs containing attribute data.
+
+    Geometry is defined by nodes' latitude and longitude coordinates, and OpenStreetMap provides a one-dimensional node-edge topology.
+    """
+    )
+    return
+
+
 @app.cell
 def _():
-    import marimo as mo
     import osmnx as ox
     import networkx as nx
     import geopandas as gpd
     import numpy as np
 
-    ox.__version__
-    return gpd, mo, np, nx, ox
+    print(f"OSMnx version: {ox.__version__}")
+    return gpd, np, nx, ox
+
+
+@app.cell(hide_code=True)
+def _():
+    mo.md(r"""## Polygons""")
+    return
 
 
 @app.cell
 def _(ox):
     city = ox.geocoder.geocode_to_gdf("Piedmont, California, USA")
+    city
+    return (city,)
+
+
+@app.cell
+def _(city, ox):
     city_proj = ox.projection.project_gdf(city)
     _ax = city_proj.plot(fc="gray", ec="none")
-    _ = _ax.axis("off")
+    _ax.axis("off")
+    _ax
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""## Street network graphs""")
     return
 
 
 @app.cell
 def _(ox):
-    piedmont_graph = ox.graph.graph_from_place(
+    graph_piedmont_drive = ox.graph.graph_from_place(
         "Piedmont, California, USA", network_type="drive"
     )
-    _fig, _ax = ox.plot.plot_graph(piedmont_graph)
-    return (piedmont_graph,)
+    _fig, _ax = ox.plot.plot_graph(graph_piedmont_drive)
+    return (graph_piedmont_drive,)
+
+
+@app.cell
+def _(ox):
+    graph_piedmont_walk = ox.graph.graph_from_place(
+        "Piedmont, California, USA", network_type="walk"
+    )
+    _fig, _ax = ox.plot.plot_graph(graph_piedmont_walk)
+    return
 
 
 @app.cell
@@ -68,21 +106,20 @@ def _():
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""## Edges and nodes""")
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""Graphs can be converted to node and edge GeoPandas GeoDataFrames""")
     return
 
 
 @app.cell
-def _(ox, piedmont_graph):
-    # you can convert your graph to node and edge GeoPandas GeoDataFrames
-    gdf_nodes, gdf_edges = ox.convert.graph_to_gdfs(piedmont_graph)
+def _(graph_piedmont_drive, ox):
+    gdf_nodes, gdf_edges = ox.convert.graph_to_gdfs(graph_piedmont_drive)
     gdf_nodes.head()
     return gdf_edges, gdf_nodes
 
@@ -94,15 +131,19 @@ def _(gdf_edges):
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""## Exporting and importing graph files""")
     return
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(
-        r"""(Add note about file formats, motivations, issues. GraphML, Geopackage, Geodatabase?)"""
+        r"""
+    (investigate [example notebook](https://github.com/gboeing/osmnx-examples/blob/main/notebooks/05-save-load-networks.ipynb) to correct everything below this)
+
+    (Add note about file formats, motivations, issues. GraphML, Geopackage, Geodatabase?)
+    """
     )
     return
 
@@ -196,7 +237,7 @@ def _(geopackage_piedmont_graph, nx, piedmont_graph):
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(
         r"""### Investigate lack of equality after exporting/importing GeoPackage"""
     )
@@ -298,7 +339,7 @@ def _(nx, piedmont_graph, piedmont_graph_temp):
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(
         r"""In order to reconstruct a graph from GeoDataFrames, we must set `fill_edge_geometry=False` when using `graph_to_gdfs`"""
     )
@@ -437,7 +478,7 @@ def _(piedmont_graph_temp_fixed):
 
 
 @app.cell(hide_code=True)
-def _(mo):
+def _():
     mo.md(r"""Deep investigation of diffs""")
     return
 
